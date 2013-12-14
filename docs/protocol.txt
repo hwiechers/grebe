@@ -1,0 +1,165 @@
+# Simple AI Game Server Communication Protocol
+
+Communication between the server and clients is performed through 
+TCP sockets. Communication is based on messages.
+
+## Message Format
+
+All messages are UTF-8 encoded strings prefixed with two big-endian bytes
+which indicate the length of the string in bytes excluding the prefix.
+The two bytes are called the message prefix. The string portion is called 
+the message body.
+
+The length of the message body can't be longer than 510 bytes. This means that
+the entire message must be 512 bytes or less.
+
+The strings have the following format.
+`<MessageType>:<MessageArguments>`
+
+### MessageType 
+A code indicating the type of the message. The message types are detailed
+below.
+
+### MessageArguments 
+A set of arguments in CSV format as described in 
+(RFC4180) [http://tools.ietf.org/html/rfc4180]. The number and restrictions
+of these are specific to the message type.
+
+## Error Handling
+
+A client that doesn't follow the protocol will be sent an `INVALID` message 
+describing the error and will be disconnected.  If that client is a player and 
+a game is in progress, he will lose the game.
+
+## Message Types
+
+### Message Invalid 
+Code: INVALID
+Args: reason
+Sent by: Server
+
+This message is sent in response to a message that doesn't follow the 
+protocol. `reason` is a description of the problem. After sending this 
+message the server the client will be disconnected.
+
+### Authentication
+
+#### Log In
+
+`LOGIN:<username>,<password>`
+
+<dl>
+  <dt>username</dt>
+  <dd>The name of the client logging in</dd>
+  <dt>password</dt>
+  <dd>The client's password</dd>
+</dl>
+
++ Sent by the client to log in
++ Must be the first message send by the client after connecting
++ The server will verify the username and password and respond with a
+  `LOGIN/SUCCESS` or `LOGIN/FAILURE` message.
++ `username` has the following restrictions:
+    - Must not be blank 
+    - Must not not contain leading or trailing whitespace
+    - Must only contain the characters for the set [a-zA-Z0-9 ]
+
+#### Log In Successful
+
+`LOGIN/SUCCESS:<role>`
+
+<dl>
+  <dt>role</dt>
+  <dd>The role of the client.</dd>
+</dl>
+
++ Sent by the server when a client successfully logs in.
++ `role` can be one of `P1`, `P2` or `Spectator` if the client 
+  is player 1, player 2 or a spectator respectively.
+
+#### Log In Failure
+
+`LOGIN/FAILURE:<reason>`
+
+<dl>
+  <dt>reason</dt>
+  <dd>The reason that authentication failed</dd>
+</dl>
+
++ Sent by the server when a client authentication fails.
++ `reason` can be one of `Bad username`, `Incorrect password` or 
+`Client already logged in` or `User already logged in`. 
++ `Client already logged in` means that the client sending the message 
+message has already successfully logged in.
++ `User already logged in` is returned if the user specified by `username` is 
+already logged in through another client.
++ After this message is sent, the client will be disconnected.
+
+### Game Flow
+
+#### Game Start
+
+`START:<state>,<movetime>`
+
++ Sent by the server
++ Signals the start of the game
+
+<dl>
+  <dt>state</dt>
+  <dd>The initial state of the game in the format specified by the game.</dd>
+  <dt>movetime</dt>
+  <dd>The time limit per move in milliseconds. (TODO: Format \d+ ??)</dd>
+</dl>
+
+#### Move
+
+`MOVE:<move>`
+
++ Sent by players
++ Submits a move
++ No response is sent if the move is valid
+
+<dl>
+  <dt>move<dt>
+  <dd>The move in the format specified by the game.</dd>
+</dl>
+
+#### Next Turn
+
+`NEXT:<p1move>,<p2move>`
+
++ Sent by the server
++ Signals the start of another turn
++ Sent to both players and spectators
++ `p1move` is blank if Player 1 didn't move last turn
++ `p2move` is blank if Player 2 didn't move last turn
+
+<dl>
+  <dt>p1move</dt>
+  <dd>Player 1's move last turn in the format specified by the game</dd>
+  <dt>p2move</dt>
+  <dd>Player 2's move last turn in the format specified by the game</dd>
+</dl>
+
+#### Game End
+
+`END:<result>,<reason>,<p1move>,<p2move>`
+
++ Sent by server
++ Indicates that the game is over
++ The client is disconnected after this message is sent to it
++ `p1move` is blank if Player 1 didn't move last turn
++ `p2move` is blank if Player 2 didn't move last turn
+
+<dl>
+  <dt>result</dt>
+  <dd>The outcome of the game; either '1-0', '0-1' or '1/2-1/2'.</dd>
+  <dt>reason</dt>
+  <dd>The reason for the result</dd>
+  <dt>p1move</dt>
+  <dd>Player 1's move last turn in the format specified by the game</dd>
+  <dt>p2move</dt>
+  <dd>Player 2's move last turn in the format specified by the game</dd>
+</dl>
+
+

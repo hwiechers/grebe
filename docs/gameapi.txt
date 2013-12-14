@@ -1,0 +1,31 @@
+# Simple AI Game Server Game Module API
+
+A game module should contain a game class.
+
+The class must implement the following:
+
+A constructor that is exported as `Game`.
+
+## Result Fields
+
+A field, `result` that returns `null` if the game hasn't ended, `1-0` if won
+by P1, `0-1` if won by P2 and `1/2-1/2` if the game is drawn.
+
+A field, `resultReason` that gives the reason for the result. It should 
+return `null` if `result` is `null`.
+
+## Glow Flow
+
+A `start()` method used to start the game. It should return 
+`{P1:<p1toMove>, P2:<p2toMove>}` 
+where `<p*toMove>` is `true` if p* has to move this turn; otherwise `false`
+
+A `move(value)` method used to submit moves. It should accept the joint 
+move for the current turn as `{P1:<p1move>, P2:<p1move>}` where `p*move` is
+p*'s move. If the move ends the game, the `null` should be returned; otherwise
+`{P1:<p1toMove>, P2:<p2toMove>}` should be returned as with `start()`.
+
+## State Method
+
+A `getState()` method that returns the game state in your game's notation
+
