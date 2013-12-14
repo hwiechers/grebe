@@ -32,5 +32,5 @@ Here are instructions on running a game of tic-tac-toe with random players:
    `node server/server.js samples/tictactoe/server/game.js A B`
 6. Start Player 1: 
    `python3 samples/tictactoe/players/Python/random_player.py A localhost`
-7. Start Player @: 
+7. Start Player 2: 
    `python3 samples/tictactoe/players/Python/random_player.py B localhost`
